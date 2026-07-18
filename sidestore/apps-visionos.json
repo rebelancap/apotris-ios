@@ -1,0 +1,33 @@
+{
+  "name": "Apotris \u2014 Apple Vision Pro",
+  "identifier": "com.rebelancap.apotris.visionos",
+  "subtitle": "Apotris on Apple Vision Pro",
+  "description": "Apotris on Apple Vision Pro: a crisp, free-resizing window with chirality pinch controls and a native control ornament.",
+  "website": "https://github.com/rebelancap/apotris-ios",
+  "tintColor": "#E0B451",
+  "iconURL": "https://raw.githubusercontent.com/rebelancap/apotris-ios/main/sidestore/assets/source-icon.png",
+  "apps": [
+    {
+      "name": "Apotris",
+      "bundleIdentifier": "com.rebelancap.apotris",
+      "developerName": "rebelancap",
+      "subtitle": "A fast, feature-packed block-stacking game",
+      "localizedDescription": "Apotris \u2014 a fast, feature-packed block-stacking game \u2014 running natively on iPhone, iPad, and Apple Vision Pro through Metal (no emulator). Marathon, Sprint, Ultra, Dig, Blitz, Zen and more, with gesture / GB-button / controller / keyboard input, display filters (Sharp / LCD / CRT), and the full skin and palette customization. Built on Apotris by akouzoukos.",
+      "iconURL": "https://raw.githubusercontent.com/rebelancap/apotris-ios/main/sidestore/assets/apotris.png",
+      "tintColor": "#E0B451",
+      "category": "games",
+      "screenshotURLs": [],
+      "versions": [
+        {
+          "version": "1.0.0",
+          "date": "2026-07-18T17:53:28Z",
+          "localizedDescription": "**Apotris for iPhone, iPad, and Apple Vision Pro** \u2014 the first release.\n\nA native port of [Apotris](https://apotris.com) by akouzoukos: the game's own\nengine rebuilt for Apple platforms and presented through Metal (no emulator).\n\n**Install:** add the SideStore source in the [README](../../#install) \u2014 Apotris\nauto-updates from there. Or grab the `.ipa` below and sideload it directly\n(iOS/iPad via SideStore/AltStore/Sideloadly; Vision Pro via SideStore installed\nwith [iloader](https://github.com/rebelancap/iloader/releases#release-visionos)).\n\n**Highlights**\n- All offline modes: Marathon, Sprint, Dig, Ultra, Blitz, Combo, Zen, Master, Death, Training, and CPU battle\n- Gesture controls (drag/flick/tap), an optional GB-button overlay with haptics, full game-controller and keyboard support\n- Display filters: Sharp / LCD / CRT\n- Apple Vision Pro: a crisp, free-resizing window with chirality pinch controls and a native control ornament\n\nOnline multiplayer isn't in this build yet.\n\nLicensed AGPL-3.0, matching upstream Apotris.",
+          "downloadURL": "https://github.com/rebelancap/apotris-ios/releases/download/v1.0.0/Apotris-1.0.0-visionOS.ipa",
+          "size": 5385908,
+          "minOSVersion": "2.0"
+        }
+      ]
+    }
+  ],
+  "news": []
+}

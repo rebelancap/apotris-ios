@@ -1,0 +1,11 @@
+--- a/subprojects/Tilengine/meson.build
++++ b/subprojects/Tilengine/meson.build
+@@ -57,7 +57,7 @@
+   c_args = ['-O2', '-fpic', '-DLIB_EXPORTS', '-Wno-unused-result', '-Wno-format-truncation']
+ endif
+ 
+-if host_machine.system() != 'horizon' and host_machine.system() != 'emscripten' and host_machine.system() != 'n3ds'
++if host_machine.system() != 'horizon' and host_machine.system() != 'emscripten' and host_machine.system() != 'n3ds' and (host_machine.system() != 'darwin' or host_machine.subsystem() in ['macos', 'darwin'])
+   c_args += '-DHAVE_OPENSSL'
+   deps += dependency('openssl')
+ endif

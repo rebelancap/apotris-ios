@@ -1,0 +1,15 @@
+--- a/source/main.cpp
++++ b/source/main.cpp
+@@ -179,7 +179,12 @@
+     checkSongs();
+ }
+ 
++#ifdef IOS
++// The app shell owns main() (SwiftUI); the game loop runs on its own thread.
++int apotris_main(int argc, char* argv[]) {
++#else
+ int main(int argc, char* argv[]) {
++#endif
+     platformInit();
+ 
+     loadSave();

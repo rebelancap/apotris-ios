@@ -1,0 +1,38 @@
+{
+  "_comment": "In-repo SideStore source. The Action (../.github/workflows/build-sources.yml) runs generate.py on a schedule and on each release, reads THIS repo's latest release, and commits the refreshed apps-ios.json / apps-visionos.json next to this file. The iOS IPA (name without 'vision'/'xros') feeds apps-ios.json; the visionOS IPA (name contains 'vision') feeds apps-visionos.json. Both platforms share bundle id com.rebelancap.apotris.",
+  "sources": {
+    "ios": {
+      "name": "Apotris — iPhone & iPad",
+      "identifier": "com.rebelancap.apotris.ios",
+      "subtitle": "Apotris — native block-stacking",
+      "description": "Apotris for iPhone and iPad: the full block-stacking game running natively on Metal, with gesture, GB-button, controller, and keyboard input.",
+      "website": "https://github.com/rebelancap/apotris-ios",
+      "tintColor": "#E0B451",
+      "iconURL": "https://raw.githubusercontent.com/rebelancap/apotris-ios/main/sidestore/assets/source-icon.png"
+    },
+    "visionos": {
+      "name": "Apotris — Apple Vision Pro",
+      "identifier": "com.rebelancap.apotris.visionos",
+      "subtitle": "Apotris on Apple Vision Pro",
+      "description": "Apotris on Apple Vision Pro: a crisp, free-resizing window with chirality pinch controls and a native control ornament.",
+      "website": "https://github.com/rebelancap/apotris-ios",
+      "tintColor": "#E0B451",
+      "iconURL": "https://raw.githubusercontent.com/rebelancap/apotris-ios/main/sidestore/assets/source-icon.png"
+    }
+  },
+  "apps": [
+    {
+      "name": "Apotris",
+      "bundleIdentifier": "com.rebelancap.apotris",
+      "repo": "rebelancap/apotris-ios",
+      "developerName": "rebelancap",
+      "subtitle": "A fast, feature-packed block-stacking game",
+      "localizedDescription": "Apotris — a fast, feature-packed block-stacking game — running natively on iPhone, iPad, and Apple Vision Pro through Metal (no emulator). Marathon, Sprint, Ultra, Dig, Blitz, Zen and more, with gesture / GB-button / controller / keyboard input, display filters (Sharp / LCD / CRT), and the full skin and palette customization. Built on Apotris by akouzoukos.",
+      "iconURL": "https://raw.githubusercontent.com/rebelancap/apotris-ios/main/sidestore/assets/apotris.png",
+      "tintColor": "#E0B451",
+      "iosMinOS": "17.0",
+      "visionosMinOS": "2.0",
+      "screenshotURLs": []
+    }
+  ]
+}

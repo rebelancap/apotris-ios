@@ -1,0 +1,25 @@
+vendor/
+work/
+build/
+build-*/
+ota/
+DerivedData/
+xcuserdata/
+*.xcodeproj
+.DS_Store
+
+# AI / development-process docs — kept local, never published
+CLAUDE.md
+DECISIONS.md
+MEASUREMENTS.md
+QUESTIONS.md
+docs/sim.md
+tmp/
+artifacts/
+
+# personal signing / OTA scripts (tailnet host + ASC key IDs)
+scripts/publish-ota.sh
+scripts/release.sh
+
+# full-history backups — never published
+*.bundle

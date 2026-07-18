@@ -1,0 +1,18 @@
+--- a/include/platform.hpp
++++ b/include/platform.hpp
+@@ -29,6 +29,15 @@
+ #ifdef ANDROID
+ 
+ #include "liba_android.h"
++#include "liba_pc.h"
++#include "liba_sdl_audio.hpp"
++
++#define PLATFORM 1
++#endif
++
++#ifdef IOS
++
++#include "liba_ios.h"
+ #include "liba_pc.h"
+ #include "liba_sdl_audio.hpp"
+ 

@@ -1,0 +1,18 @@
+--- a/source/liba_sdl_audio.cpp
++++ b/source/liba_sdl_audio.cpp
+@@ -1,9 +1,13 @@
+ #include "platform.hpp"
+ 
+ #if defined(PC) || defined(PORTMASTER) || defined(WEB) || defined(SWITCH) ||   \
+-    defined(ANDROID)
+-
++    defined(ANDROID) || defined(IOS)
++
++#ifdef IOS
++#include "sdl2_shim.h" // stdio-backed SDL_RWops + enum values, no SDL runtime
++#else
+ #include <SDL.h>
++#endif
+ #include <algorithm>
+ #include <cstdio>
+ #include <dirent.h>

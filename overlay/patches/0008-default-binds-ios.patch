@@ -1,0 +1,20 @@
+--- a/source/saving.cpp
++++ b/source/saving.cpp
+@@ -59,7 +59,7 @@
+     const int pmSave = 3876;
+ 
+     if (savefile->newGame >= 0x50 && savefile->newGame <= 0x51) {
+-#if defined(PC) || defined(WEB)
++#if defined(PC) || defined(WEB) || defined(IOS)
+ 
+         GameKeys keys = savefile->settings.keys;
+ 
+@@ -269,7 +269,7 @@
+ GameKeys getDefaultGameKeys() {
+     GameKeys k;
+ 
+-#if defined(PC) || defined(WEB)
++#if defined(PC) || defined(WEB) || defined(IOS)
+     k = {
+         .moveLeft =
+             (SDL_CONTROLLER_BUTTON_DPAD_LEFT << 16) | packKey(SDLK_LEFT),

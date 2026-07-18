@@ -1,0 +1,16 @@
+--- a/subprojects/SoLoud/meson.build
++++ b/subprojects/SoLoud/meson.build
+@@ -51,7 +51,12 @@
+     openmpt,
+ ]
+ 
+-if get_option('portmaster')
++if host_machine.system() == 'darwin' and host_machine.subsystem() not in ['macos', 'darwin']
++    # Apple mobile (iOS/visionOS): AudioQueue backend, no SDL
++    sources += files('src/backend/coreaudio/soloud_coreaudio.cpp')
++    arg = '-DWITH_COREAUDIO=1'
++    deps += dependency('appleframeworks', modules : ['AudioToolbox', 'CoreFoundation'])
++elif get_option('portmaster')
+     sources += files('src/backend/sdl/soloud_sdl2_dll.c')
+     arg = '-DWITH_SDL2=1'
+     deps += dependency('sdl2', static : false, default_options : ['default_library=shared'], fallback : ['sdl2', 'sdl2_dep'])

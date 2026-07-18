@@ -1,0 +1,119 @@
+--- a/meson.build
++++ b/meson.build
+@@ -122,7 +122,9 @@
+     add_global_arguments('-fno-stack-protector', language: ['cpp', 'c'])
+     add_global_arguments('-U_FORTIFY_SOURCE', language: ['cpp', 'c'])
+ elif host_machine.system() == 'darwin'
+-    add_global_arguments('-mmacosx-version-min=10.15', language : ['cpp', 'c'])
++    if host_machine.subsystem() in ['macos', 'darwin']
++        add_global_arguments('-mmacosx-version-min=10.15', language : ['cpp', 'c'])
++    endif
+ elif host_machine.system() == 'android'
+     add_global_arguments('-DIMGUI_IMPL_OPENGL_ES3', language : ['c', 'cpp'])
+ endif
+@@ -248,6 +250,8 @@
+     #############################
+     # Windows, macOS, and Linux #
+     #############################
++
++    apple_mobile = host_machine.system() == 'darwin' and host_machine.subsystem() not in ['macos', 'darwin']
+ 
+     json = dependency('nlohmann_json', fallback: ['nlohmann_json', 'nlohmann_json_dep'])
+     opus = dependency('opus', fallback: ['opus', 'opus_dep'])
+@@ -305,7 +309,9 @@
+             fallback: ['Tilengine', 'tilengine_dep'],
+         )
+ 
+-        if host_machine.system() == 'darwin'
++        if apple_mobile
++            message('Apple mobile: no SDL2/SDL2_mixer (D-005)')
++        elif host_machine.system() == 'darwin'
+             sdl2_dep = subproject(
+                 'sdl2',
+                 default_options: [
+@@ -357,25 +363,37 @@
+         )
+     endif
+ 
+-    dependencies = [
+-        dependency('threads'),
+-        json,
+-        ogg,
+-        openmpt,
+-        sdl_mixer,
+-        opus,
+-        tilengine,
+-        sdl2_dep,
+-        soloud,
+-    ]
++    if apple_mobile
++        dependencies = [
++            dependency('threads'),
++            json,
++            ogg,
++            openmpt,
++            opus,
++            tilengine,
++            soloud,
++        ]
++    else
++        dependencies = [
++            dependency('threads'),
++            json,
++            ogg,
++            openmpt,
++            sdl_mixer,
++            opus,
++            tilengine,
++            sdl2_dep,
++            soloud,
++        ]
++    endif
+     if host_machine.system() == 'windows'
+         subproject('curl', default_options: ['default_library=static'])
+     endif
+ 
+-    if host_machine.system() != 'horizon'
++    if host_machine.system() != 'horizon' and not apple_mobile
+         dependencies += dependency('cpr')
+     endif
+-    if host_machine.system() != 'emscripten' and host_machine.system() != 'horizon'
++    if host_machine.system() != 'emscripten' and host_machine.system() != 'horizon' and not apple_mobile
+         datachannel = dependency(
+             'libdatachannel',
+             fallback: ['libdatachannel', 'libdatachannel_dep'],
+@@ -410,6 +428,9 @@
+         imgui_proj = subproject('imgui', default_options: ['default_library=static', 'opengl=enabled', 'sdl2=enabled', 'sdl2_renderer=enabled'])
+         dependencies += imgui_proj.get_variable('imgui_dep')
+ 
++    elif apple_mobile
++        add_project_arguments('-DIOS', language: ['cpp', 'c'])
++        add_project_arguments('-DNO_ONLINE', language: ['cpp', 'c'])
+     elif host_machine.system() != 'emscripten'
+         add_project_arguments('-DPC', language: ['cpp', 'c'])
+         add_project_arguments('-DGL', language: ['c', 'cpp'])
+@@ -505,7 +526,9 @@
+         link_args += '-lwinpthread'
+         link_args += '-Wl,--no-whole-archive'
+     elif host_machine.system() == 'darwin'
+-        link_args += '-mmacosx-version-min=10.15'
++        if host_machine.subsystem() in ['macos', 'darwin']
++            link_args += '-mmacosx-version-min=10.15'
++        endif
+     endif
+ 
+     # The final Apotris compile target
+@@ -574,6 +597,13 @@
+         )
+ 
+         alias_target('apk', apk)
++    elif apple_mobile
++        binary = static_library(
++            'apotris-core',
++            generated_files + sources,
++            include_directories: includes,
++            dependencies: dependencies,
++        )
+     else
+         binary = executable(
+             name,

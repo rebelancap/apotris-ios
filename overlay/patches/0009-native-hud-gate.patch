@@ -1,0 +1,29 @@
+--- a/source/game.cpp
++++ b/source/game.cpp
+@@ -1469,7 +1469,15 @@
+     return false;
+ }
+ 
++#ifdef IOS
++extern bool nativeHud; // defined in the iOS backend (liba_ios.mm)
++#endif
++
+ void GameScene::showTimer() {
++#ifdef IOS
++    if (nativeHud)
++        return;
++#endif
+     if (!(game->gameMode == TRAINING || game->gameMode == ZEN || demo ||
+           handlingTest)) {
+ 
+@@ -1520,6 +1528,10 @@
+ const char units[] = {'k', 'm', 'b'};
+ 
+ void GameScene::showText() {
++#ifdef IOS
++    if (nativeHud)
++        return;
++#endif
+     int gm = game->gameMode;
+ 
+     if (gm == MARATHON || gm == ULTRA || gm == BLITZ || gm == CLASSIC ||

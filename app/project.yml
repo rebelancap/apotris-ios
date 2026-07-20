@@ -10,7 +10,7 @@ settings:
   base:
     DEVELOPMENT_TEAM: 57G8J46Z2T
     CODE_SIGN_STYLE: Automatic
-    MARKETING_VERSION: "1.1.7"
+    MARKETING_VERSION: "1.1.8"
     CURRENT_PROJECT_VERSION: "1"
     SWIFT_VERSION: "5.9"
     CLANG_CXX_LANGUAGE_STANDARD: c++17
@@ -55,7 +55,7 @@ targets:
       path: Info.plist
       properties:
         CFBundleDisplayName: Apotris
-        CFBundleShortVersionString: "1.1.7"
+        CFBundleShortVersionString: "1.1.8"
         CFBundleVersion: "1"
         NSLocalNetworkUsageDescription: "Apotris uses the local network to connect you with nearby players for online matches."
         UILaunchScreen: {}
@@ -90,7 +90,7 @@ targets:
       path: Info-vision.plist
       properties:
         CFBundleDisplayName: Apotris
-        CFBundleShortVersionString: "1.1.7"
+        CFBundleShortVersionString: "1.1.8"
         CFBundleVersion: "1"
         NSLocalNetworkUsageDescription: "Apotris uses the local network to connect you with nearby players for online matches."
         UIApplicationSupportsIndirectInputEvents: true

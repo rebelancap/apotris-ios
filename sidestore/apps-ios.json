@@ -19,6 +19,14 @@
       "screenshotURLs": [],
       "versions": [
         {
+          "version": "1.1.7",
+          "date": "2026-07-20T03:05:51Z",
+          "localizedDescription": "Online multiplayer, plus a big round of visionOS and iOS polish.\n\n## New\n- **Online Multi Battle** \u2014 up to 5 players over WebRTC, on the official `api.apotris.com` server. Verified cross-country on real iPhone + Vision Pro.\n\n## Fixed / improved\n- **visionOS gamepad** now works \u2014 the controller reaches GCController instead of being turned into a gaze pointer. Left stick doubles as the d-pad.\n- **visionOS window** \u2014 the move/resize handles are back, and the window is resizable.\n- **iOS touch** \u2014 tighter d-pad so a left/right press no longer misfires a destructive drop.\n- **Pause menu** Restart/Quit work on touch, gaze, and controller.\n- **Audio** revives after closing and reopening the visionOS window.\n- Bigger on-screen buttons; a gesture reference table in Settings.\n\n## Install\nSideStore/AltStore: add the source (auto-updates), or sideload the IPAs below. Dev-signed \u2014 SideStore re-signs on install.",
+          "downloadURL": "https://github.com/rebelancap/apotris-ios/releases/download/v1.1.7/Apotris-1.1.7-iOS.ipa",
+          "size": 5308976,
+          "minOSVersion": "17.0"
+        },
+        {
           "version": "1.0.0",
           "date": "2026-07-18T17:53:28Z",
           "localizedDescription": "**Apotris for iPhone, iPad, and Apple Vision Pro** \u2014 the first release.\n\nA native port of [Apotris](https://apotris.com) by akouzoukos: the game's own\nengine rebuilt for Apple platforms and presented through Metal (no emulator).\n\n**Install:** add the SideStore source in the [README](../../#install) \u2014 Apotris\nauto-updates from there. Or grab the `.ipa` below and sideload it directly\n(iOS/iPad via SideStore/AltStore/Sideloadly; Vision Pro via SideStore installed\nwith [iloader](https://github.com/rebelancap/iloader/releases#release-visionos)).\n\n**Highlights**\n- All offline modes: Marathon, Sprint, Dig, Ultra, Blitz, Combo, Zen, Master, Death, Training, and CPU battle\n- Gesture controls (drag/flick/tap), an optional GB-button overlay with haptics, full game-controller and keyboard support\n- Display filters: Sharp / LCD / CRT\n- Apple Vision Pro: a crisp, free-resizing window with chirality pinch controls and a native control ornament\n\nOnline multiplayer isn't in this build yet.\n\nLicensed AGPL-3.0, matching upstream Apotris.",

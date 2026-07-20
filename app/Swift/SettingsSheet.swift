@@ -60,6 +60,30 @@ struct SettingsSheet: View {
                     Toggle("Debug HUD", isOn: $settings.showDebugHUD)
                 }
 
+                #if os(visionOS)
+                // Every visionOS input is a gaze + pinch, and chirality matters:
+                // left-hand pinch = Back / CCW, right-hand pinch = Confirm / CW.
+                Section("Gestures — gameplay") {
+                    Group {
+                        LabeledContent("Pinch + drag ← →", value: "Move")
+                        LabeledContent("Pinch + drag ↓", value: "Soft drop")
+                        LabeledContent("Pinch + flick ↓", value: "Hard drop")
+                        LabeledContent("Left / right pinch", value: "Rotate ↺ / ↻")
+                        LabeledContent("Two-hand pinch", value: "Rotate 180°")
+                        LabeledContent("Pinch + swipe ↑", value: "Hold")
+                        LabeledContent("Long pinch", value: "Zone")
+                    }
+                    .font(.footnote)
+                }
+                Section("Gestures — menus") {
+                    Group {
+                        LabeledContent("Right-hand pinch", value: "Confirm")
+                        LabeledContent("Left-hand pinch", value: "Back")
+                        LabeledContent("Pinch + drag", value: "Navigate")
+                    }
+                    .font(.footnote)
+                }
+                #else
                 Section("Gestures — gameplay") {
                     Group {
                         LabeledContent("Drag ← →", value: "Move")
@@ -80,6 +104,7 @@ struct SettingsSheet: View {
                     }
                     .font(.footnote)
                 }
+                #endif
             }
             .navigationTitle("Apotris")
             .navigationBarTitleDisplayMode(.inline)

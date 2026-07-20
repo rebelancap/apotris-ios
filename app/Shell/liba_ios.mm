@@ -132,6 +132,21 @@ std::atomic<bool> gRunning{false};
 std::atomic<bool> gInBackground{false};
 std::atomic<bool> gQuit{false};
 
+// visionOS can close the app's window (backgrounding it) and reopen it. That
+// deactivates the AVAudioSession and stops SoLoud's AudioQueue, and nothing
+// restarts them on reopen — music stays dead until a force-quit. Pause the
+// backend on background and, on foreground, re-activate the session and restart
+// the queue (SoLoud's coreaudio backend exposes AudioQueuePause/Start here).
+static void suspendAppAudio() {
+    if (gSoloud.mBackendPauseFunc)
+        gSoloud.mBackendPauseFunc(&gSoloud);
+}
+static void resumeAppAudio() {
+    [[AVAudioSession sharedInstance] setActive:YES error:nil];
+    if (gSoloud.mBackendResumeFunc)
+        gSoloud.mBackendResumeFunc(&gSoloud);
+}
+
 ApotrisRumbleFn gRumbleHandler = nullptr;
 
 std::thread gGameThread;
@@ -413,6 +428,9 @@ void handleInput() {
                     if (savefile != nullptr)
                         paused = true;
                     currentlyPressed.clear();
+                    suspendAppAudio();
+                } else {
+                    resumeAppAudio();
                 }
                 break;
             case OpKind::Save:
@@ -473,9 +491,11 @@ void updateWindow(uint8_t* framebuffer) {
                                 dispatch_time(DISPATCH_TIME_NOW, 250 * NSEC_PER_MSEC));
         std::lock_guard<std::mutex> lock(qMutex);
         for (const auto& op : pendingOps) {
-            if (op.kind == OpKind::Background)
+            if (op.kind == OpKind::Background) {
                 gInBackground = op.a != 0;
-            else if (op.kind == OpKind::Save && savefile != nullptr)
+                if (!gInBackground)
+                    resumeAppAudio(); // foregrounded: revive session + queue
+            } else if (op.kind == OpKind::Save && savefile != nullptr)
                 saveSavefile();
         }
         pendingOps.clear();

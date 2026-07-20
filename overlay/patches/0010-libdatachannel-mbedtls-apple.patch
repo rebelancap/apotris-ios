@@ -1,0 +1,19 @@
+--- a/subprojects/libdatachannel/meson.build
++++ b/subprojects/libdatachannel/meson.build
+@@ -23,6 +23,16 @@
+     bcrypt_dep = cpp_compiler.find_library('bcrypt')
+     dependencies += bcrypt_dep
+     dependencies += dependency('openssl', fallback : ['openssl', 'openssl_dep'])
++elif host_machine.system() == 'darwin' and host_machine.subsystem() not in ['macos', 'darwin']
++    mbedtls_ucfg = meson.current_source_dir() / 'mbedtls_user_config.h'
++    mbedtls_opt = cmake.subproject_options()
++    mbedtls_opt.add_cmake_defines({'ENABLE_TESTING': false, 'ENABLE_PROGRAMS': false, 'BUILD_SHARED_LIBS': false, 'MBEDTLS_FATAL_WARNINGS': false, 'MBEDTLS_USER_CONFIG_FILE': mbedtls_ucfg})
++    mbedtls_sp = cmake.subproject('mbedtls', options : mbedtls_opt)
++    dependencies += mbedtls_sp.dependency('mbedtls')
++    dependencies += mbedtls_sp.dependency('mbedx509')
++    dependencies += mbedtls_sp.dependency('mbedcrypto')
++    add_project_arguments('-DUSE_MBEDTLS=1', language : ['c', 'cpp'])
++    add_project_arguments('-DMBEDTLS_USER_CONFIG_FILE="' + mbedtls_ucfg + '"', language : ['c', 'cpp'])
+ elif host_machine.system() == 'linux' or host_machine.system() == 'darwin' or host_machine.system() == 'android'
+     dependencies += dependency('openssl', fallback : ['openssl', 'openssl_dep'])
+ else

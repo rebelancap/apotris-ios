@@ -1,4 +1,7 @@
 import SwiftUI
+#if os(visionOS)
+import GameController
+#endif
 
 struct MetalHostView: UIViewRepresentable {
     var filter: Int
@@ -64,32 +67,22 @@ struct GameScreen: View {
                 }
             }
         }
+        #if os(visionOS)
+        // Claim the gamepad at the ROOT of the window content. GCEventInteraction
+        // is scoped to the gaze/hit-test target's subtree, not app-wide — a claim
+        // on a 1pt corner view never applies because nobody gazes there. This
+        // routes controller-sourced events to GCController while hand gaze-pinch
+        // still flows to VisionGestureLayer (the claim filters by source). The
+        // settings sheet + ornament are separate hierarchies, so A still
+        // gaze-clicks the chrome. (visionOS 2.0+; per Fable consult 2026-07-19.)
+        .handlesGameControllerEvents(matching: .gamepad)
+        #endif
         .sheet(isPresented: $showSettings) {
             SettingsSheet()
                 .environmentObject(settings)
         }
-        #if os(visionOS)
-        .ornament(attachmentAnchor: .scene(.bottom), contentAlignment: .top) {
-            HStack(spacing: 14) {
-                OrnamentButton("pause.fill") { Bridge.pulse(ApotrisActionPause) }
-                OrnamentButton("tray.and.arrow.down.fill") {
-                    Bridge.pulse(ApotrisActionHold)
-                }
-                OrnamentButton("arrow.counterclockwise") {
-                    Bridge.pulse(ApotrisActionRotateCCW)
-                }
-                OrnamentButton("arrow.clockwise") {
-                    Bridge.pulse(ApotrisActionRotateCW)
-                }
-                OrnamentButton("gearshape.fill") { showSettings = true }
-            }
-            .padding(12)
-            .glassBackgroundEffect()
-            // Transparent gap above the glass so the bar clears the window
-            // edge instead of overlapping it.
-            .padding(.top, 28)
-        }
-        #endif
+        // No visionOS ornament: it competed with the window's grab/close chrome
+        // and users rely on gestures + the on-screen chips instead.
     }
 }
 
@@ -100,10 +93,10 @@ struct HUDChip: View {
     var body: some View {
         Button(action: action) {
             Image(systemName: systemName)
-                .font(.system(size: 13, weight: .bold))
-                .foregroundStyle(.white.opacity(0.75))
-                .frame(width: 34, height: 26)
-                .background(.black.opacity(0.35), in: Capsule())
+                .font(.system(size: 19, weight: .bold))
+                .foregroundStyle(.white.opacity(0.85))
+                .frame(width: 50, height: 38)
+                .background(.black.opacity(0.45), in: Capsule())
         }
         .buttonStyle(.plain)
     }
@@ -111,8 +104,8 @@ struct HUDChip: View {
 
 struct DebugHUD: View {
     var body: some View {
-        TimelineView(.periodic(from: .now, by: 0.25)) { _ in
-            Text(Bridge.debugState)
+        TimelineView(.periodic(from: .now, by: 0.1)) { _ in
+            Text(Bridge.debugState + "\n" + GameControllerManager.debugString)
                 .font(.system(size: 10, design: .monospaced))
                 .foregroundStyle(.green)
                 .padding(4)
@@ -121,24 +114,3 @@ struct DebugHUD: View {
         }
     }
 }
-
-#if os(visionOS)
-struct OrnamentButton: View {
-    let systemName: String
-    let action: () -> Void
-
-    init(_ systemName: String, action: @escaping () -> Void) {
-        self.systemName = systemName
-        self.action = action
-    }
-
-    var body: some View {
-        Button(action: action) {
-            Image(systemName: systemName)
-                .font(.system(size: 20, weight: .semibold))
-                .frame(width: 44, height: 44)
-        }
-        .buttonStyle(.borderless)
-    }
-}
-#endif

@@ -46,6 +46,9 @@ struct VisionGestureLayer: View {
                                                           time: now)
                                     } else {
                                         activeEvents.insert(id)
+                                        // diagnostic: a claimed pad's A must not
+                                        // arrive here (it goes via GCController).
+                                        GameControllerManager.spatialEvents += 1
                                         engine.touchBegan(id, at: event.location,
                                                           time: now, hand: hand)
                                     }

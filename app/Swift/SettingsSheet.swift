@@ -60,10 +60,25 @@ struct SettingsSheet: View {
                     Toggle("Debug HUD", isOn: $settings.showDebugHUD)
                 }
 
-                Section {
-                    Text("Gestures — drag: move · flick down: hard drop · drag down: soft drop · tap right/left: rotate · two-finger tap: 180 · swipe up: hold · long-press: zone. In menus: tap = confirm, two-finger = back, swipes navigate.")
-                        .font(.footnote)
-                        .foregroundStyle(.secondary)
+                Section("Gestures — gameplay") {
+                    Group {
+                        LabeledContent("Drag ← →", value: "Move")
+                        LabeledContent("Drag ↓", value: "Soft drop")
+                        LabeledContent("Flick ↓", value: "Hard drop")
+                        LabeledContent("Tap left / right", value: "Rotate ↺ / ↻")
+                        LabeledContent("Two-finger tap", value: "Rotate 180°")
+                        LabeledContent("Swipe ↑", value: "Hold")
+                        LabeledContent("Long-press", value: "Zone")
+                    }
+                    .font(.footnote)
+                }
+                Section("Gestures — menus") {
+                    Group {
+                        LabeledContent("Tap", value: "Confirm")
+                        LabeledContent("Two-finger tap", value: "Back")
+                        LabeledContent("Swipe", value: "Navigate")
+                    }
+                    .font(.footnote)
                 }
             }
             .navigationTitle("Apotris")

@@ -1,0 +1,13 @@
+--- a/include/LinkWebRTC.hpp
++++ b/include/LinkWebRTC.hpp
+@@ -161,6 +161,10 @@
+         ws = std::make_shared<rtc::WebSocket>(rtc::WebSocketConfiguration{
+             .caCertificatePemFile =
+                 certPath.empty() ? std::nullopt : std::make_optional(certPath),
++        });
++#elif defined(IOS)
++        ws = std::make_shared<rtc::WebSocket>(rtc::WebSocketConfiguration{
++            .caCertificatePemFile = "assets/ssl/cacert.pem",
+         });
+ #else
+         ws = std::make_shared<rtc::WebSocket>();

@@ -28,7 +28,7 @@ cd work/apotris
 BUILD="build-core-$XCPLAT"
 
 if [ ! -f "$BUILD/build.ninja" ]; then
-  meson setup "$BUILD" --cross-file "meson/$PLATFORM.ini"
+  meson setup "$BUILD" --cross-file "meson/$PLATFORM.ini" --wrap-mode=forcefallback
 fi
 meson compile -C "$BUILD"
 

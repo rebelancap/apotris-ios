@@ -31,7 +31,7 @@
              sdl2_dep = subproject(
                  'sdl2',
                  default_options: [
-@@ -357,25 +363,37 @@
+@@ -357,22 +363,34 @@
          )
      endif
  
@@ -77,22 +77,17 @@
 +    if host_machine.system() != 'horizon' and not apple_mobile
          dependencies += dependency('cpr')
      endif
--    if host_machine.system() != 'emscripten' and host_machine.system() != 'horizon'
-+    if host_machine.system() != 'emscripten' and host_machine.system() != 'horizon' and not apple_mobile
-         datachannel = dependency(
-             'libdatachannel',
-             fallback: ['libdatachannel', 'libdatachannel_dep'],
-@@ -410,6 +428,9 @@
+     if host_machine.system() != 'emscripten' and host_machine.system() != 'horizon'
+@@ -410,6 +428,8 @@
          imgui_proj = subproject('imgui', default_options: ['default_library=static', 'opengl=enabled', 'sdl2=enabled', 'sdl2_renderer=enabled'])
          dependencies += imgui_proj.get_variable('imgui_dep')
  
 +    elif apple_mobile
 +        add_project_arguments('-DIOS', language: ['cpp', 'c'])
-+        add_project_arguments('-DNO_ONLINE', language: ['cpp', 'c'])
      elif host_machine.system() != 'emscripten'
          add_project_arguments('-DPC', language: ['cpp', 'c'])
          add_project_arguments('-DGL', language: ['c', 'cpp'])
-@@ -505,7 +526,9 @@
+@@ -505,7 +525,9 @@
          link_args += '-lwinpthread'
          link_args += '-Wl,--no-whole-archive'
      elif host_machine.system() == 'darwin'
@@ -103,7 +98,7 @@
      endif
  
      # The final Apotris compile target
-@@ -574,6 +597,13 @@
+@@ -574,6 +596,13 @@
          )
  
          alias_target('apk', apk)

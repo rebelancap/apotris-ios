@@ -1,0 +1,71 @@
+--- a/include/LinkWebRTC.hpp
++++ b/include/LinkWebRTC.hpp
+@@ -299,12 +299,22 @@
+         initWebSocketConfig();
+ 
+ #if !defined(WEB) && !defined(ANDROID)
+-        std::promise<void> wsPromise;
+-        auto wsFuture = wsPromise.get_future();
+-
+-        ws->onOpen([this, wws = make_weak_ptr(ws), &wsPromise]() {
++        auto wsPromise = std::make_shared<std::promise<void>>();
++        auto wsSettled = std::make_shared<std::atomic<bool>>(false);
++        auto wsFuture = wsPromise->get_future();
++        auto settle = [wsPromise, wsSettled](std::exception_ptr err) {
++            bool expected = false;
++            if (!wsSettled->compare_exchange_strong(expected, true))
++                return;
++            if (err)
++                wsPromise->set_exception(err);
++            else
++                wsPromise->set_value();
++        };
++
++        ws->onOpen([this, wws = make_weak_ptr(ws), settle]() {
+             std::cout << "WebSocket connected, signaling ready" << std::endl;
+-            wsPromise.set_value();
++            settle(nullptr);
+             if (auto shared_ws = wws.lock()) {
+                 json playerInfo = {{ID, "broadcast"},
+                                    {TYPE, PLAYER_INFO},
+@@ -315,10 +325,15 @@
+             }
+         });
+ 
+-        ws->onError([&wsPromise](const std::string& s) {
+-            std::cout << "WebSocket error" << std::endl;
+-            wsPromise.set_exception(
+-                std::make_exception_ptr(std::runtime_error(s)));
++        ws->onError([settle](const std::string& s) {
++            std::cout << "WebSocket error: " << s << std::endl;
++            settle(std::make_exception_ptr(std::runtime_error(s)));
++        });
++
++        ws->onClosed([settle]() {
++            std::cout << "WebSocket closed" << std::endl;
++            settle(std::make_exception_ptr(
++                std::runtime_error("closed before signaling ready")));
+         });
+ #else
+         ws->onOpen([this, wws = make_weak_ptr(ws)]() {
+@@ -347,7 +362,19 @@
+ 
+ #if !defined(WEB) && !defined(ANDROID)
+         std::cout << "Waiting for signaling to be connected..." << std::endl;
+-        wsFuture.get();
++        if (wsFuture.wait_for(std::chrono::seconds(15)) !=
++            std::future_status::ready) {
++            std::cout << "Signaling connection timed out; still waiting"
++                      << std::endl;
++            return;
++        }
++        try {
++            wsFuture.get();
++        } catch (const std::exception& e) {
++            std::cout << "Signaling connection failed: " << e.what()
++                      << std::endl;
++            return;
++        }
+ #endif
+     }
+ 

@@ -1,0 +1,87 @@
+--- a/source/menus.cpp
++++ b/source/menus.cpp
+@@ -809,6 +809,15 @@
+ 
+             // Hold-to-confirm processing for Restart/Quit
+             if (confirmHoldAction >= 0) {
++                bool confirmDone = false;
++#ifdef IOS
++                // A pause-menu option is only reached by a deliberate
++                // select, and visionOS pad confirm/cancel is too flaky to
++                // gate on a second press -- a two-step confirm strands the
++                // player at the confirm cue (A intermittent, B dead). So
++                // complete on the single deliberate selection.
++                confirmDone = true;
++#else
+                 if (key_is_down(k.confirm)) {
+                     confirmHoldTimer++;
+ 
+@@ -838,38 +847,41 @@
+                     }
+ 
+                     // Action completes after 1 second (60 frames)
+-                    if (confirmHoldTimer >= 60) {
+-                        sprite_hide(confirmMeterSprite);
+-                        if (confirmHoldAction == 1) {
+-                            addGameStats();
+-                            startGame();
+-                            changeScene([]() { return new GameScene(); });
+-                            paused = false;
+-                            count = false;
+-                            sfx(SFX_MENUCONFIRM);
+-                            return 0;
+-                        } else if (confirmHoldAction == 3) {
+-                            enableBlend(prevBld);
+-                            sfx(SFX_MENUCANCEL);
+-                            buildBG(3, 0, 27, 0, 1, true);
+-                            addGameStats();
+-                            playSongRandom(0);
+-
+-#ifdef MULTIBOOT
+-                            changeScene([]() { return new MultBattleScene(); },
+-                                        Transitions::FADE);
+-#else
+-                            changeScene([]() { return new MainMenuScene(); },
+-                                        Transitions::FADE);
+-#endif
+-                            return 1;
+-                        }
+-                    }
++                    if (confirmHoldTimer >= 60)
++                        confirmDone = true;
+                 } else {
+                     // Button released, cancel hold
+                     confirmHoldTimer = 0;
+                     confirmHoldAction = -1;
+                     sprite_hide(confirmMeterSprite);
++                }
++#endif
++                if (confirmDone) {
++                    sprite_hide(confirmMeterSprite);
++                    if (confirmHoldAction == 1) {
++                        addGameStats();
++                        startGame();
++                        changeScene([]() { return new GameScene(); });
++                        paused = false;
++                        count = false;
++                        sfx(SFX_MENUCONFIRM);
++                        return 0;
++                    } else if (confirmHoldAction == 3) {
++                        enableBlend(prevBld);
++                        sfx(SFX_MENUCANCEL);
++                        buildBG(3, 0, 27, 0, 1, true);
++                        addGameStats();
++                        playSongRandom(0);
++
++#ifdef MULTIBOOT
++                        changeScene([]() { return new MultBattleScene(); },
++                                    Transitions::FADE);
++#else
++                        changeScene([]() { return new MainMenuScene(); },
++                                    Transitions::FADE);
++#endif
++                        return 1;
++                    }
+                 }
+             } else if (key_hit(k.confirm)) {
+                 int n = selection;

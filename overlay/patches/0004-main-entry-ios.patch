@@ -1,6 +1,13 @@
 --- a/source/main.cpp
 +++ b/source/main.cpp
-@@ -179,7 +179,12 @@
+@@ -1,5 +1,6 @@
+ #include "sceneModes.hpp"
+ #include <string>
++#include <cstdlib> // getenv/strtoul for the iOS dev test hook below
+ 
+ #include "blockEngine.hpp"
+ #include "cmath"
+@@ -179,7 +180,12 @@
      checkSongs();
  }
  
@@ -13,3 +20,34 @@
      platformInit();
  
      loadSave();
+@@ -188,6 +194,21 @@
+     initialize();
+ 
+ #ifndef MULTIBOOT
++#ifdef IOS
++    // Dev-only connection test hook (no effect unless the env var is set,
++    // which requires a debugging launch). APOTRIS_TEST_ROOM boots straight
++    // into a private Multi Battle room, bypassing menu nav so two simulators
++    // pair deterministically. APOTRIS_TEST_SEED gives each instance a
++    // distinct localId - randomId() draws from the game PRNG, so two fresh
++    // saves would otherwise collide and fail to pair.
++    if (const char* testRoom = getenv("APOTRIS_TEST_ROOM");
++        testRoom && testRoom[0]) {
++        if (const char* s = getenv("APOTRIS_TEST_SEED"))
++            randSetSeed((unsigned)strtoul(s, nullptr, 10));
++        std::string room(testRoom);
++        changeScene([room]() { return new MultBattleScene(room); });
++    } else
++#endif
+     changeScene([]() { return new TitleScene(); });
+ #else
+     changeScene([]() { return new MultBattleScene(); });
+@@ -201,7 +222,7 @@
+         if (!exceptionReason.empty()) {
+             const std::string localReason = exceptionReason;
+             exceptionReason = "";
+-#ifdef PC
++#if defined(PC) || defined(IOS)
+             setUpPresentException(localReason);
+ #endif
+         } else

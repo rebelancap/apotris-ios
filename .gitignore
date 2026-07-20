@@ -23,3 +23,6 @@ scripts/release.sh
 
 # full-history backups — never published
 *.bundle
+
+# Fable consult brief — local only
+FABLE-*.md

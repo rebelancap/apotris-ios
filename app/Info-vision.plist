@@ -17,11 +17,13 @@
 	<key>CFBundlePackageType</key>
 	<string>APPL</string>
 	<key>CFBundleShortVersionString</key>
-	<string>1.0.0</string>
+	<string>1.1.7</string>
 	<key>CFBundleVersion</key>
 	<string>1</string>
 	<key>GCSupportsControllerUserInteraction</key>
 	<true/>
+	<key>NSLocalNetworkUsageDescription</key>
+	<string>Apotris uses the local network to connect you with nearby players for online matches.</string>
 	<key>UIApplicationSupportsIndirectInputEvents</key>
 	<true/>
 </dict>

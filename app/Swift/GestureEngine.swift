@@ -118,7 +118,11 @@ final class GestureEngine {
             chordCandidate = nil
 
             if gameplayGesture {
-                if abs(dxTotal) >= abs(dyTotal) {
+                // Down is a destructive soft/hard drop, so bias toward horizontal:
+                // treat a downward drag as a move unless it's clearly vertical
+                // (>1.6x). A left/right drag that dips a little stays a move.
+                if abs(dxTotal) >= abs(dyTotal)
+                    || (dyTotal > 0 && abs(dyTotal) < abs(dxTotal) * 1.6) {
                     phase = .horizontal
                     moveAccum = 0
                     // Re-play the travel so the first cell registers now.

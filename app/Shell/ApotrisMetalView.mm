@@ -90,13 +90,9 @@ typedef struct {
         self.multipleTouchEnabled = YES;
         self.userInteractionEnabled = NO; // gestures live in the overlay view
 
-#if TARGET_OS_VISION
-        // Inherited trap (charter): without an explicit claim, visionOS
-        // routes gamepad presses to gaze-pinch. Claim them app-wide.
-        GCEventInteraction* interaction = [[GCEventInteraction alloc] init];
-        interaction.handledEventTypes = GCUIEventTypeGamepad;
-        [self addInteraction:interaction];
-#endif
+        // visionOS gamepad claim lives on a dedicated interactive host view
+        // (PadClaim in GameScreen.swift) — a claim on this userInteractionEnabled
+        // = NO view is inert on device. See VISION-PRO-GUIDE §1.3.
 
         [[NSNotificationCenter defaultCenter]
             addObserver:self

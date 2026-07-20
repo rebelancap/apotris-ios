@@ -19,15 +19,17 @@ struct GBButtonsView: View {
                     .position(x: 24 + 66 * scale,
                               y: geo.size.height - (landscape ? 30 : 60) - 66 * scale)
 
-                // A / B pair, lower-right (A above-right, B below-left, GBA style)
+                // A / B pair, lower-right. Positions swapped per request (A now
+                // below-left, B above-right); actions unchanged (A=0 confirm,
+                // B=1 cancel).
                 GBRoundButton(label: "A", sdlButton: 0)
-                    .frame(width: 62 * scale, height: 62 * scale)
-                    .position(x: geo.size.width - 24 - 31 * scale,
-                              y: geo.size.height - (landscape ? 30 : 60) - 96 * scale)
-                GBRoundButton(label: "B", sdlButton: 1)
                     .frame(width: 62 * scale, height: 62 * scale)
                     .position(x: geo.size.width - 24 - 31 * scale - 66 * scale,
                               y: geo.size.height - (landscape ? 30 : 60) - 40 * scale)
+                GBRoundButton(label: "B", sdlButton: 1)
+                    .frame(width: 62 * scale, height: 62 * scale)
+                    .position(x: geo.size.width - 24 - 31 * scale,
+                              y: geo.size.height - (landscape ? 30 : 60) - 96 * scale)
 
                 // L / R shoulders at the top corners of the control zone
                 GBPillButton(label: "L", sdlButton: 9)
@@ -175,16 +177,15 @@ struct DPadView: View {
         var next: Set<Int32> = []
         let angle = atan2(cy, cx) // 0 = right, positive = down
         let deg = angle * 180 / .pi
-        // 8 sectors of 45°; diagonals press two buttons.
+        // Up (hold) and Down (drop) are both destructive, so each gets a narrow
+        // near-vertical sector and every diagonal resolves to pure left/right.
+        // Pressing near or just above the L/R arrows moves L/R instead of firing
+        // Up/Down; left/right own the wide zones.
         switch deg {
-        case -22.5..<22.5: next = [14]
-        case 22.5..<67.5: next = [14, 12]
-        case 67.5..<112.5: next = [12]
-        case 112.5..<157.5: next = [13, 12]
-        case -67.5 ..< -22.5: next = [14, 11]
-        case -112.5 ..< -67.5: next = [11]
-        case -157.5 ..< -112.5: next = [13, 11]
-        default: next = [13]
+        case -75..<75: next = [14]      // right (wide)
+        case 75..<105: next = [12]      // down (narrow, near-vertical)
+        case -105 ..< -75: next = [11]  // up (narrow, near-vertical)
+        default: next = [13]            // left (wide, wraps)
         }
         setActive(next)
     }

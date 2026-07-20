@@ -40,17 +40,25 @@ scripts/release.sh             # clean public commit + push to GitHub
 
 ## What usually happens
 
-Most upstream changes are in game logic / assets and never touch our 9
+Most upstream changes are in game logic / assets and never touch our 13
 patched regions, so steps 3–4 are a clean no-op re-pin and it "just works".
 When a patch *does* need attention, `gen-patches.py` names the exact edit and
 the mismatch, so re-deriving it is a targeted fix (see the patch's `gen(...)`
 block in `scripts/gen-patches.py`).
 
-The 9 patches, for reference:
+The 13 patches, for reference:
 `0001` meson apple-mobile target · `0002` platform.hpp IOS include ·
-`0003` NO_ONLINE guards · `0004` `apotris_main` entry · `0005` audio stdio I/O ·
-`0006` SoLoud CoreAudio backend · `0007` Tilengine no-OpenSSL ·
-`0008` IOS default binds · `0009` native-HUD gate.
+`0003` NO_ONLINE guards · `0004` `apotris_main` entry + iOS test hook + iOS
+exception routing · `0005` audio stdio I/O · `0006` SoLoud CoreAudio backend ·
+`0007` Tilengine no-OpenSSL · `0008` IOS default binds · `0009` native-HUD gate ·
+`0010` libdatachannel over mbedTLS (Apple mobile) · `0011` iOS online CA cert ·
+`0012` iOS signaling connect-failure handling · `0013` pause-menu Restart/Quit
+tap-to-confirm on iOS.
+
+The last three (`0010`–`0012`) are the online-multiplayer stack: they cross-build
+libdatachannel/libjuice/usrsctp against mbedTLS, point the WebSocket at the
+bundled CA cert, and make a failed signaling connect fall back to the game's
+reconnect loop instead of crashing or hanging the game thread.
 
 ## Cadence
 

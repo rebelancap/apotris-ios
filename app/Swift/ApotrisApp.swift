@@ -16,16 +16,20 @@ struct ApotrisApp: App {
             GameScreen()
                 .environmentObject(settings)
                 .preferredColorScheme(.dark)
-                .persistentSystemOverlays(.hidden)
                 #if os(iOS)
+                // iOS only: hides the home indicator. On visionOS this ALSO
+                // hides the window's move pill / grab chrome, so scope it out —
+                // that's why the grabber wouldn't appear on gaze.
+                .persistentSystemOverlays(.hidden)
                 .statusBarHidden()
                 #endif
         }
         #if os(visionOS)
-        // 3:2 to match the game's native content aspect, so it fills the
-        // window with only a small even gradient border (no wide yellow sides).
+        // 3:2 to match the game's native content aspect. .automatic (not
+        // .contentSize) so the window shows resize corners; the game scales its
+        // fixed canvas to fill any size, so the gradient still covers the border.
         .defaultSize(width: 1020, height: 680)
-        .windowResizability(.contentSize)
+        .windowResizability(.automatic)
         #endif
         .onChange(of: scenePhase) { _, phase in
             switch phase {

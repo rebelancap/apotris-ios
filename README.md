@@ -58,10 +58,13 @@ remappable bindings; controller rumble.
 ## Features
 
 - Every offline mode: **Marathon, Sprint, Dig, Ultra, Blitz, Combo, Zen, Master, Death, Training**, and **battle vs CPU**
+- **Online Multi Battle** — private rooms by code, up to 5 players
 - The full skin / palette / gradient customization, soundtrack, and detailed stats
 - **Gestures, GB buttons, controller, keyboard** — pick your input and remap freely
 - **Display filters:** Sharp (crisp pixels), LCD (handheld grid), CRT (scanlines)
 - 60 / 120 Hz (ProMotion), native settings that persist
+- **Pick up where you left off:** a long run is saved when you leave the app, so a force-quit
+  (or a reboot) doesn't lose it — **Continue** appears at the top of the menu on the next launch
 - **Apple Vision Pro:** a crisp, free-resizing window with chirality pinch controls and a native control ornament
 
 ## Requirements
@@ -74,7 +77,10 @@ remappable bindings; controller rumble.
 **Is this an emulator?** No — it's Apotris's own engine (the Tilengine renderer and SoLoud audio)
 rebuilt natively for Apple platforms and presented through Metal.
 
-**Multiplayer?** Online multiplayer isn't in this build yet; all offline modes and CPU battles are here.
+**Multiplayer?** Yes — online **Multi Battle** works, over the same signalling server the official
+Apotris builds use. Pick it from Play, then host or join a private room by code; up to 5 players.
+Peers connect directly to each other, so both ends need a reachable network path (there's no relay
+fallback — same as upstream).
 
 **The app stopped launching after about a week?** Apps sideloaded with a free Apple account expire
 after 7 days (paid developer accounts last a year). SideStore / iloader refresh them automatically in

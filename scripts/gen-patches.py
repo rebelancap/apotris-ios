@@ -15,7 +15,19 @@ PATCHES = ROOT / "overlay/patches"
 
 
 def gen(num: int, name: str, relpath: str, transforms):
-    src = (VENDOR / relpath).read_text()
+    # Read with newline='' so line endings survive verbatim. Upstream is mostly
+    # LF but not entirely (include/blockEngine.hpp is CRLF), and read_text()'s
+    # universal-newline translation would emit LF context lines that can never
+    # match a CRLF file -- patch rejects the hunk even though the rule matched.
+    raw = (VENDOR / relpath).read_text(newline="")
+    crlf = "\r\n" in raw
+    assert not (crlf and "\n" in raw.replace("\r\n", "")), (
+        f"{name}: {relpath} has mixed line endings -- transforms below assume "
+        f"one style, so the generated patch would be unreliable"
+    )
+
+    # Transform rules are written in LF for legibility; convert back afterwards.
+    src = raw.replace("\r\n", "\n") if crlf else raw
     out = src
     for old, new, count in transforms:
         found = out.count(old)
@@ -23,6 +35,11 @@ def gen(num: int, name: str, relpath: str, transforms):
             f"{name}: expected {count}x, found {found}x: {old[:70]!r}"
         )
         out = out.replace(old, new)
+
+    if crlf:
+        src = src.replace("\n", "\r\n")
+        out = out.replace("\n", "\r\n")
+
     diff = difflib.unified_diff(
         src.splitlines(keepends=True),
         out.splitlines(keepends=True),
@@ -30,8 +47,8 @@ def gen(num: int, name: str, relpath: str, transforms):
         tofile=f"b/{relpath}",
     )
     path = PATCHES / f"{num:04d}-{name}.patch"
-    path.write_text("".join(diff))
-    print(f"wrote {path.relative_to(ROOT)}")
+    path.write_text("".join(diff), newline="")
+    print(f"wrote {path.relative_to(ROOT)}{' (CRLF)' if crlf else ''}")
 
 
 APPLE_MOBILE = (
@@ -233,6 +250,25 @@ gen(4, "main-entry-ios", "source/main.cpp", [
         "            randSetSeed((unsigned)strtoul(s, nullptr, 10));\n"
         "        std::string room(testRoom);\n"
         "        changeScene([room]() { return new MultBattleScene(room); });\n"
+        "    } else if (const char* soloMode = getenv(\"APOTRIS_TEST_SOLO\");\n"
+        "               soloMode && soloMode[0]) {\n"
+        "        // Boots straight into a single-player run of the given mode\n"
+        "        // number (see BlockEngine::Modes; 1 = Marathon). The attract\n"
+        "        // demo makes scripted menu nav to gameplay unreliable, and\n"
+        "        // the suspend-save round-trip check needs a real game.\n"
+        "        BlockEngine::Options opt;\n"
+        "        opt.mode = (BlockEngine::Modes)atoi(soloMode);\n"
+        "        opt.level = 1;\n"
+        "        opt.goal = 40;\n"
+        "        opt.tuning = getTuning();\n"
+        "        startGame(opt, (int)randNext());\n"
+        "        changeScene([]() { return new GameScene(); });\n"
+        "    } else if (const char* m = getenv(\"APOTRIS_TEST_MENU\");\n"
+        "               m && m[0]) {\n"
+        "        // Straight to the main menu, skipping the title and its\n"
+        "        // attract demo -- which restarts on any button press and so\n"
+        "        // makes scripted navigation to the menu unreliable.\n"
+        "        changeScene([]() { return new MainMenuScene(); });\n"
         "    } else\n"
         "#endif\n"
         "    changeScene([]() { return new TitleScene(); });\n"
@@ -642,6 +678,94 @@ gen(13, "pause-menu-ios-confirm", "source/menus.cpp", [
         "                    }\n"
         "                }\n"
         "            } else if (key_hit(k.confirm)) {\n",
+        1,
+    ),
+])
+
+# --- 14-17: single-slot suspend-save -----------------------------------------
+# Upstream persists settings/scores but nothing about a live run, so a
+# force-quit mid-marathon loses it. The snapshot itself lives in overlay-added
+# files (source/gameState.cpp, include/gameState.hpp); these four patches are
+# only the hooks: build it, let it reach Game's private state, offer "Continue"
+# on the main menu, and dispatch it. The slot is written when the app is
+# backgrounded and cleared when it returns to the foreground (liba_ios.mm) --
+# on-disk state only matters if the process dies.
+
+gen(14, "gamestate-meson", "meson.build", [
+    (
+        "    src_dir / 'game.cpp',\n",
+        "    src_dir / 'game.cpp',\n"
+        "    src_dir / 'gameState.cpp',\n",
+        1,
+    ),
+])
+
+gen(15, "gamestate-friend", "include/blockEngine.hpp", [
+    # A resumed run that carried only the public board would come back with no
+    # DAS charge, a reset lock delay, a fresh bag and no grade progress -- the
+    # handling and RNG bookkeeping it needs is all private.
+    (
+        "class Game {\n"
+        "private:\n",
+        "class Game {\n"
+        "    // iOS port: the suspend-save serializer needs the private\n"
+        "    // handling/RNG state too. See source/gameState.cpp.\n"
+        "    friend struct GameStateIO;\n"
+        "\n"
+        "private:\n",
+        1,
+    ),
+])
+
+gen(16, "gamestate-menu-entry", "include/scene.hpp", [
+    (
+        "extern const std::list<std::string> menuOptions;\n",
+        "extern const std::list<std::string> menuOptions;\n"
+        "#ifdef IOS\n"
+        "// Suspend-save slot, implemented in liba_ios.mm.\n"
+        "extern bool suspendSaveAvailable();\n"
+        "#endif\n",
+        1,
+    ),
+    (
+        "        std::list<std::string> result = menuOptions;\n",
+        "        std::list<std::string> result = menuOptions;\n"
+        "\n"
+        "#ifdef IOS\n"
+        "        // Resuming an interrupted run is the first thing you want\n"
+        "        // after the app was force-quit mid-game.\n"
+        "        if (suspendSaveAvailable())\n"
+        "            result.push_front(\"Continue\");\n"
+        "#endif\n",
+        1,
+    ),
+])
+
+gen(17, "gamestate-menu-dispatch", "source/menuSystem.cpp", [
+    (
+        "void sceneSwitcher(const std::string& str) {\n"
+        "#ifndef MULTIBOOT\n"
+        "    if (str == \"Play\") {\n",
+        "#ifdef IOS\n"
+        "// Suspend-save slot, implemented in liba_ios.mm. Consumes the slot:\n"
+        "// a snapshot that survived being resumed would let you reload after\n"
+        "// topping out and re-roll the leaderboard entry.\n"
+        "extern bool suspendSaveResume();\n"
+        "#endif\n"
+        "\n"
+        "void sceneSwitcher(const std::string& str) {\n"
+        "#ifndef MULTIBOOT\n"
+        "#ifdef IOS\n"
+        "    if (str == \"Continue\") {\n"
+        "        if (suspendSaveResume()) {\n"
+        "            gameLoop();\n"
+        "        } else {\n"
+        "            sfx(SFX_MENUCANCEL);\n"
+        "        }\n"
+        "        return;\n"
+        "    }\n"
+        "#endif\n"
+        "    if (str == \"Play\") {\n",
         1,
     ),
 ])

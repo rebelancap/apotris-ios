@@ -1,0 +1,10 @@
+--- a/meson.build
++++ b/meson.build
+@@ -39,6 +39,7 @@
+     src_dir / 'detectEmulators.c',
+     src_dir / 'flashSaves.cpp',
+     src_dir / 'game.cpp',
++    src_dir / 'gameState.cpp',
+     src_dir / 'gbp_logo.cpp',
+     src_dir / 'interrupt.cpp',
+     src_dir / 'liba_gba.cpp',

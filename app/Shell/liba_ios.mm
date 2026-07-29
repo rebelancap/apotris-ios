@@ -30,6 +30,7 @@
 #include <unordered_set>
 #include <vector>
 
+#include "gameState.hpp"
 #include "platform.hpp"
 #include "save.h"
 #include "scene.hpp"
@@ -362,6 +363,12 @@ static int packedKeyForAction(int action) {
 
 static int controllerHalf(int packed) { return ((uint32_t)packed >> 16) & 0xffff; }
 
+// Suspend-save slot; defined below alongside the savefile I/O.
+void suspendSaveCapture();
+void suspendSaveClear();
+void suspendSaveForegrounded();
+void suspendSaveSelfTest();
+
 // ---------------------------------------------------------------------------
 // Per-frame input pump (game thread, called from updateWindow)
 // ---------------------------------------------------------------------------
@@ -429,8 +436,12 @@ void handleInput() {
                         paused = true;
                     currentlyPressed.clear();
                     suspendAppAudio();
+                    // Last chance to record the run: from here the process can
+                    // be force-quit or evicted without another callback.
+                    suspendSaveCapture();
                 } else {
                     resumeAppAudio();
+                    suspendSaveForegrounded();
                 }
                 break;
             case OpKind::Save:
@@ -480,6 +491,7 @@ void updateWindow(uint8_t* framebuffer) {
     }
 
     handleInput();
+    suspendSaveSelfTest();
 
     // Pace: one game frame per display tick (the shell signals at ~60 Hz).
     // While backgrounded, park here — draining ops each wakeup so the
@@ -493,8 +505,10 @@ void updateWindow(uint8_t* framebuffer) {
         for (const auto& op : pendingOps) {
             if (op.kind == OpKind::Background) {
                 gInBackground = op.a != 0;
-                if (!gInBackground)
+                if (!gInBackground) {
                     resumeAppAudio(); // foregrounded: revive session + queue
+                    suspendSaveForegrounded();
+                }
             } else if (op.kind == OpKind::Save && savefile != nullptr)
                 saveSavefile();
         }
@@ -651,6 +665,165 @@ void saveSavefile() {
         log("Error when trying to write save.");
 }
 
+// ---------------------------------------------------------------------------
+// Suspend-save slot (Documents/Apotris/state.sav)
+//
+// One slot. Written when the app is backgrounded, deleted when it returns to
+// the foreground: the on-disk copy only has to outlive the process dying
+// (force-quit, memory eviction, reboot). Backgrounding alone does not end a
+// run — the game thread just parks — so if we come back, the in-memory game is
+// authoritative and a leftover blob would let "Continue" resurrect a run the
+// player had already carried to a game over.
+// ---------------------------------------------------------------------------
+
+std::string getStatePath() {
+    mkdir(savefileDir().c_str(), 0755);
+    return savefileDir() + "/state.sav";
+}
+
+// Cached: the main menu asks every frame while it builds its option list.
+std::atomic<bool> gSlotPresent{false};
+
+void refreshSlotPresence() {
+    struct stat st;
+    gSlotPresent =
+        stat(getStatePath().c_str(), &st) == 0 && st.st_size > 0;
+}
+
+void suspendSaveClear() {
+    unlink(getStatePath().c_str());
+    gSlotPresent = false;
+}
+
+void suspendSaveCapture() {
+    std::vector<uint8_t> blob = GameState::capture();
+    if (blob.empty()) {
+        // Not in a resumable game (menus, attract demo, multiplayer, already
+        // lost). Leave any existing slot alone: it is an earlier run the
+        // player has not resumed yet, and backgrounding from the menu must
+        // not destroy it.
+        return;
+    }
+
+    const std::string path = getStatePath();
+    const std::string tmp = path + ".tmp";
+    FILE* f = fopen(tmp.c_str(), "wb");
+    if (f == nullptr) {
+        log("suspend-save: cannot open slot for writing");
+        return;
+    }
+    size_t wrote = fwrite(blob.data(), 1, blob.size(), f);
+    fclose(f);
+    if (wrote != blob.size()) {
+        log("suspend-save: short write");
+        unlink(tmp.c_str());
+        return;
+    }
+    // Commit by rename so being killed mid-write cannot leave a torn slot
+    // that still passes its own checksum.
+    if (rename(tmp.c_str(), path.c_str()) != 0) {
+        log("suspend-save: could not commit slot");
+        unlink(tmp.c_str());
+        return;
+    }
+    gSlotPresent = true;
+}
+
+// Coming back to the foreground with the run still in memory makes the blob we
+// wrote on the way out redundant — and worse than redundant, because the
+// player can now carry that same run to a game over, and a leftover slot would
+// let "Continue" resurrect it. Only drop the slot when there is a live game to
+// supersede it; otherwise it belongs to an earlier session still waiting to be
+// resumed.
+void suspendSaveForegrounded() {
+    if (GameState::eligible())
+        suspendSaveClear();
+}
+
+// Referenced by include/scene.hpp (overlay patch 0016).
+bool suspendSaveAvailable() { return gSlotPresent.load(); }
+
+// Referenced by source/menuSystem.cpp (overlay patch 0017).
+bool suspendSaveResume() {
+    const std::string path = getStatePath();
+    std::vector<uint8_t> blob;
+    bool readOk = false;
+
+    FILE* f = fopen(path.c_str(), "rb");
+    if (f != nullptr) {
+        fseek(f, 0, SEEK_END);
+        long len = ftell(f);
+        fseek(f, 0, SEEK_SET);
+        if (len > 0 && len < (1 << 20)) {
+            blob.resize((size_t)len);
+            readOk = fread(blob.data(), 1, blob.size(), f) == blob.size();
+        }
+        fclose(f);
+    }
+
+    // Consume the slot either way — a blob we could not read is not worth
+    // keeping, and a resumed run must not be resumable a second time.
+    suspendSaveClear();
+
+    if (!readOk)
+        return false;
+    return GameState::restore(blob);
+}
+
+// Verification hook: with APOTRIS_STATE_SELFTEST set, once a real game has
+// been running a while, round-trip it through the serializer in situ and
+// compare the re-serialized bytes. A capture/restore/capture that is not
+// byte-identical means some field is written but not read back (or not
+// carried at all). Runs once per launch; harmless without the env var.
+void suspendSaveSelfTest() {
+    static bool done = false;
+    static int frames = 0;
+    if (done)
+        return;
+    if (getenv("APOTRIS_STATE_SELFTEST") == nullptr) {
+        done = true;
+        return;
+    }
+    if (!GameState::eligible()) {
+        frames = 0;
+        return;
+    }
+    if (++frames < 600) // ~10s of play, so the board is not trivially empty
+        return;
+    done = true;
+
+    std::vector<uint8_t> before = GameState::capture();
+    if (before.empty()) {
+        log("STATE-SELFTEST: FAIL — capture returned nothing");
+        return;
+    }
+    if (!GameState::restore(before)) {
+        log("STATE-SELFTEST: FAIL — restore rejected its own blob");
+        return;
+    }
+    std::vector<uint8_t> after = GameState::capture();
+    if (after == before) {
+        log("STATE-SELFTEST: PASS — round-trip identical, " +
+            std::to_string(before.size()) + " bytes");
+        return;
+    }
+    size_t at = 0, diff = 0;
+    while (at < before.size() && at < after.size() && before[at] == after[at])
+        at++;
+    for (size_t i = 0; i < before.size() && i < after.size(); i++)
+        if (before[i] != after[i])
+            diff++;
+    // 48-byte header (magic, version, sizeof, Info, length, checksum); a
+    // payload-relative offset is what points at the offending field.
+    const size_t kHeader = 48;
+    log("STATE-SELFTEST: FAIL — first mismatch at byte " + std::to_string(at) +
+        (at >= kHeader
+             ? " (payload+" + std::to_string(at - kHeader) + ")"
+             : " (in header)") +
+        ", " + std::to_string(diff) + " bytes differ of " +
+        std::to_string(before.size()));
+}
+
 void updateBatteryInfo() {
 #if !TARGET_OS_VISION
     // UIDevice monitoring is enabled at startup on the main thread; reads
@@ -760,6 +933,9 @@ void apotris_start(const char* resourcePath, const char* documentsPath) {
     gResourcePath = resourcePath;
     gDocumentsPath = documentsPath;
     homeDir = strdup(documentsPath);
+
+    // Decides whether the main menu offers "Continue" on this launch.
+    refreshSlotPresence();
 
     frameSemaphore = dispatch_semaphore_create(0);
 

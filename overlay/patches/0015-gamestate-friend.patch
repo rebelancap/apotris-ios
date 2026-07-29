@@ -1,0 +1,13 @@
+--- a/include/blockEngine.hpp
++++ b/include/blockEngine.hpp
+@@ -490,6 +490,10 @@
+ };
+ 
+ class Game {
++    // iOS port: the suspend-save serializer needs the private
++    // handling/RNG state too. See source/gameState.cpp.
++    friend struct GameStateIO;
++
+ private:
+     void fillBag();
+     void fillQueue(int);

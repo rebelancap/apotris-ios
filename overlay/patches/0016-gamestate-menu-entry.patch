@@ -1,0 +1,27 @@
+--- a/include/scene.hpp
++++ b/include/scene.hpp
+@@ -17,6 +17,10 @@
+ 
+ extern void sceneSwitcher(const std::string& str);
+ extern const std::list<std::string> menuOptions;
++#ifdef IOS
++// Suspend-save slot, implemented in liba_ios.mm.
++extern bool suspendSaveAvailable();
++#endif
+ extern const std::list<std::string> gameOptions;
+ extern const std::list<std::string> settingsOptions;
+ extern const std::list<std::string> controlOptions;
+@@ -229,6 +233,13 @@
+     std::list<std::string> getOptionList() {
+         std::list<std::string> result = menuOptions;
+ 
++#ifdef IOS
++        // Resuming an interrupted run is the first thing you want
++        // after the app was force-quit mid-game.
++        if (suspendSaveAvailable())
++            result.push_front("Continue");
++#endif
++
+ #if !(defined(GBA) || defined(WEB))
+ 
+         result.push_back("Quit");

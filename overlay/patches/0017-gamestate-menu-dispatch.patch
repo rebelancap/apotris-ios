@@ -1,0 +1,28 @@
+--- a/source/menuSystem.cpp
++++ b/source/menuSystem.cpp
+@@ -137,8 +137,25 @@
+     }
+ }
+ 
++#ifdef IOS
++// Suspend-save slot, implemented in liba_ios.mm. Consumes the slot:
++// a snapshot that survived being resumed would let you reload after
++// topping out and re-roll the leaderboard entry.
++extern bool suspendSaveResume();
++#endif
++
+ void sceneSwitcher(const std::string& str) {
+ #ifndef MULTIBOOT
++#ifdef IOS
++    if (str == "Continue") {
++        if (suspendSaveResume()) {
++            gameLoop();
++        } else {
++            sfx(SFX_MENUCANCEL);
++        }
++        return;
++    }
++#endif
+     if (str == "Play") {
+         changeScene([]() { return new ModeListScene(); }, Transitions::FADE);
+     } else if (str == "Settings") {

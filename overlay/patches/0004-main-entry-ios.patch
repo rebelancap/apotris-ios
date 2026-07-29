@@ -20,7 +20,7 @@
      platformInit();
  
      loadSave();
-@@ -188,6 +194,21 @@
+@@ -188,6 +194,40 @@
      initialize();
  
  #ifndef MULTIBOOT
@@ -37,12 +37,31 @@
 +            randSetSeed((unsigned)strtoul(s, nullptr, 10));
 +        std::string room(testRoom);
 +        changeScene([room]() { return new MultBattleScene(room); });
++    } else if (const char* soloMode = getenv("APOTRIS_TEST_SOLO");
++               soloMode && soloMode[0]) {
++        // Boots straight into a single-player run of the given mode
++        // number (see BlockEngine::Modes; 1 = Marathon). The attract
++        // demo makes scripted menu nav to gameplay unreliable, and
++        // the suspend-save round-trip check needs a real game.
++        BlockEngine::Options opt;
++        opt.mode = (BlockEngine::Modes)atoi(soloMode);
++        opt.level = 1;
++        opt.goal = 40;
++        opt.tuning = getTuning();
++        startGame(opt, (int)randNext());
++        changeScene([]() { return new GameScene(); });
++    } else if (const char* m = getenv("APOTRIS_TEST_MENU");
++               m && m[0]) {
++        // Straight to the main menu, skipping the title and its
++        // attract demo -- which restarts on any button press and so
++        // makes scripted navigation to the menu unreliable.
++        changeScene([]() { return new MainMenuScene(); });
 +    } else
 +#endif
      changeScene([]() { return new TitleScene(); });
  #else
      changeScene([]() { return new MultBattleScene(); });
-@@ -201,7 +222,7 @@
+@@ -201,7 +241,7 @@
          if (!exceptionReason.empty()) {
              const std::string localReason = exceptionReason;
              exceptionReason = "";

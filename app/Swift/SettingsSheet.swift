@@ -1,5 +1,46 @@
 import SwiftUI
 
+/// One-of-N list for the audio modes, each option carrying its explanation as
+/// a caption underneath — "duck" and "mix" mean nothing, and the difference
+/// between lowering *their* audio and lowering *ours* needs a sentence.
+struct AudioModePicker: View {
+    @Binding var selection: AudioMode
+    @Environment(\.dismiss) private var dismiss
+
+    var body: some View {
+        List {
+            ForEach(AudioMode.allCases) { mode in
+                Button {
+                    selection = mode
+                    dismiss() // match the auto-pop of a stock picker
+                } label: {
+                    HStack(alignment: .firstTextBaseline) {
+                        VStack(alignment: .leading, spacing: 3) {
+                            Text(mode.label)
+                                .foregroundStyle(.primary)
+                            Text(mode.detail)
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                                .fixedSize(horizontal: false, vertical: true)
+                        }
+                        Spacer(minLength: 12)
+                        Image(systemName: "checkmark")
+                            .fontWeight(.semibold)
+                            .opacity(mode == selection ? 1 : 0)
+                    }
+                    .contentShape(Rectangle()) // whole row is the hit target
+                }
+                .buttonStyle(.plain)
+                .accessibilityIdentifier("audioMode\(mode.rawValue)")
+            }
+        }
+        .navigationTitle("Other app audio")
+        #if !os(visionOS)
+        .navigationBarTitleDisplayMode(.inline)
+        #endif
+    }
+}
+
 /// Port-level settings (control scheme, haptics, sensitivity). Game settings
 /// (skins, audio, DAS/ARR, remapping…) live in Apotris's own menus.
 struct SettingsSheet: View {
@@ -49,6 +90,39 @@ struct SettingsSheet: View {
                     Text("Sharp is crisp pixels; LCD adds a handheld pixel grid; CRT adds scanlines.")
                         .font(.footnote)
                         .foregroundStyle(.secondary)
+                }
+
+                Section {
+                    // Not a .navigationLink Picker: that style renders the
+                    // selected option's label in the collapsed row too, so a
+                    // two-line row would drag its caption onto this screen.
+                    NavigationLink {
+                        AudioModePicker(selection: Binding(
+                            get: { settings.audioMode },
+                            set: { settings.audioMode = $0 }
+                        ))
+                    } label: {
+                        LabeledContent("Other app audio",
+                                       value: settings.audioMode.label)
+                    }
+
+                    VStack(alignment: .leading) {
+                        HStack {
+                            Text("Game volume")
+                            Spacer()
+                            Text("\(Int((settings.gameVolume * 100).rounded()))%")
+                                .foregroundStyle(.secondary)
+                                .monospacedDigit()
+                        }
+                        Slider(value: $settings.gameVolume, in: 0...1)
+                            .onChange(of: settings.gameVolume) { _, v in
+                                Bridge.setGameVolume(v)
+                            }
+                    }
+                } header: {
+                    Text("Audio")
+                } footer: {
+                    Text(settings.audioMode.detail)
                 }
 
                 Section("Feedback") {

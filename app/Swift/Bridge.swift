@@ -26,6 +26,11 @@ enum Bridge {
         apotris_analog_event(axis, value)
     }
 
+    static func setAudioMode(_ mode: Int) { apotris_audio_set_mode(Int32(mode)) }
+    static func setGameVolume(_ volume: Double) {
+        apotris_audio_set_volume(Float(volume))
+    }
+
     static func setBackground(_ flag: Bool) { apotris_set_background(flag) }
     static func requestSave() { apotris_request_save() }
 

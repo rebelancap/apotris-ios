@@ -12,13 +12,14 @@ final class ApotrisUITests: XCTestCase {
 
     // MARK: - Helpers
 
-    private func launchApp(scheme: String = "gestures") -> XCUIApplication {
+    private func launchApp(scheme: String = "gestures",
+                           extraArgs: [String] = []) -> XCUIApplication {
         let app = XCUIApplication()
         app.launchArguments += [
             "-showDebugHUD", "YES",
             "-controlScheme", scheme,
             "-hapticsEnabled", "NO",
-        ]
+        ] + extraArgs
         app.launch()
         let hud = app.staticTexts["debugHUD"]
         XCTAssertTrue(hud.waitForExistence(timeout: 20), "debug HUD missing")
@@ -189,16 +190,95 @@ final class ApotrisUITests: XCTestCase {
         XCTAssertFalse(app.descendants(matching: .any)["gbDpad"].firstMatch.exists)
 
         app.buttons["chipSettings"].firstMatch.tap()
-        let haptics = app.switches["Haptics"].firstMatch
-        XCTAssertTrue(haptics.waitForExistence(timeout: 5), "settings sheet missing")
+        // Anchor on the Controls section itself: rows further down the Form are
+        // lazily rendered, so anything below the fold may not exist yet.
+        let gbOption = app.buttons["GB Buttons"].firstMatch
+        XCTAssertTrue(gbOption.waitForExistence(timeout: 5), "settings sheet missing")
 
-        app.buttons["GB Buttons"].firstMatch.tap() // segmented picker option
+        gbOption.tap() // segmented picker option
         app.buttons["Done"].firstMatch.tap()
         settle(1.0)
         XCTAssertTrue(app.descendants(matching: .any)["gbDpad"].firstMatch
             .waitForExistence(timeout: 5),
             "switching scheme should show the GB overlay")
         screenshotArtifact(app, "settings-scheme-switch")
+    }
+
+    /// The Audio section: the five-mode picker reaches every option, selecting
+    /// one updates the explanation, and the volume row is present. The session
+    /// side of the same change is asserted from the app's own log (see
+    /// "[apotris] audio: session -> Playback opts N").
+    func testAudioSettingsSection() {
+        // Pin the mode: this test changes it, and the change persists, so an
+        // unpinned re-run would start from whatever the last run selected.
+        let app = launchApp(extraArgs: ["-audioMode", "2", "-gameVolume", "1.0"])
+        settle(2.0)
+        app.buttons["chipSettings"].firstMatch.tap()
+        XCTAssertTrue(app.buttons["GB Buttons"].firstMatch.waitForExistence(timeout: 5),
+                      "settings sheet missing")
+
+        // The Audio section sits below the fold of the medium detent, and Form
+        // rows are lazily rendered — scroll until it exists.
+        let modeRow = app.staticTexts["Other app audio"].firstMatch
+        for _ in 0..<4 where !modeRow.exists {
+            app.swipeUp()
+            settle(0.4)
+        }
+        if !modeRow.exists {
+            let dump = XCTAttachment(string: app.debugDescription)
+            dump.name = "settings-hierarchy"
+            dump.lifetime = .keepAlways
+            add(dump)
+        }
+        XCTAssertTrue(modeRow.exists, "Audio section missing from settings")
+
+        // Default mode is "Lower Other Audio" — its sentence is the footer.
+        XCTAssertTrue(app.staticTexts[
+            "Music and podcasts drop to the background; game audio stays full."]
+            .firstMatch.waitForExistence(timeout: 5),
+            "default audio mode explanation missing")
+        XCTAssertTrue(app.staticTexts["Game volume"].firstMatch.exists,
+                      "game volume row missing")
+        screenshotArtifact(app, "settings-audio-section")
+
+        tapText(app, "Other app audio")
+        settle(1.5)
+        screenshotArtifact(app, "settings-audio-modes")
+
+        for raw in 0..<5 {
+            let row = app.descendants(matching: .any)["audioMode\(raw)"].firstMatch
+            XCTAssertTrue(row.waitForExistence(timeout: 5),
+                          "picker missing mode row \(raw)")
+        }
+        // Each option carries its explanation as a caption — the captions are
+        // the point of this screen, so assert one is actually rendered.
+        let caption = "Game audio goes silent while another app is playing."
+        let captioned = app.descendants(matching: .any)
+            .matching(NSPredicate(format: "label CONTAINS %@", caption))
+            .firstMatch
+        XCTAssertTrue(captioned.exists, "option captions missing from the picker")
+
+        app.descendants(matching: .any)["audioMode4"].firstMatch.tap()
+        XCTAssertTrue(app.staticTexts[
+            "Game audio goes silent while another app is playing."]
+            .firstMatch.waitForExistence(timeout: 5),
+            "selecting a mode should update the explanation")
+
+        app.buttons["Done"].firstMatch.tap()
+        settle(1.0)
+        XCTAssertTrue(inGameplay(app) || hud(app).hasPrefix("g="),
+                      "app should still be running after the audio change")
+    }
+
+    /// Form rows render as buttons on some OS versions and plain cells on
+    /// others; tapping the label's text hits the row either way.
+    private func tapText(_ app: XCUIApplication, _ label: String) {
+        let button = app.buttons[label].firstMatch
+        if button.waitForExistence(timeout: 3) {
+            button.tap()
+        } else {
+            app.staticTexts[label].firstMatch.tap()
+        }
     }
 
     func testBackgroundResumeKeepsRunning() {

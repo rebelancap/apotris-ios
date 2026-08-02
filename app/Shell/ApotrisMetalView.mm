@@ -208,6 +208,10 @@ typedef struct {
 }
 
 - (void)displayTick:(CADisplayLink*)link {
+    // Session policy + mix gain: ticked here rather than off gameplay so the
+    // menus and attract demo duck too.
+    apotris_audio_tick();
+
     // Pace the game to 60 Hz regardless of display refresh.
     CFTimeInterval now = link.timestamp;
     if (now - _lastGameTick >= (1.0 / 61.0)) {

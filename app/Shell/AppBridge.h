@@ -35,6 +35,18 @@ typedef enum {
     ApotrisInputTypeTouch = 2,
 } ApotrisInputType;
 
+// What happens to Apotris's sound when another app (Music, a podcast, ...) is
+// already playing. Persisted as the "audioMode" user default; see
+// ApotrisAudio.mm.
+typedef enum {
+    ApotrisAudioStopOthers = 0, // non-mixable session: the other app is cut off
+    ApotrisAudioPlayBoth = 1,   // both at full volume
+    ApotrisAudioDuckOthers = 2, // the other app is lowered by iOS (default)
+    ApotrisAudioDuckGame = 3,   // WE lower ourselves while the other app plays
+    ApotrisAudioMuteGame = 4,   // WE go silent while the other app plays
+    ApotrisAudioModeCount = 5,
+} ApotrisAudioMode;
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -87,6 +99,18 @@ typedef struct {
 } ApotrisHud;
 void apotris_hud(ApotrisHud* out);
 bool apotris_native_hud(void); // true when the native HUD layout is active
+
+// Audio ---------------------------------------------------------------------
+// Session category/options + a master mix gain on top of the engine's own
+// volume settings. apotris_audio_boot() must run before the audio device is
+// opened (the first setActive: is what interrupts other apps); the tick both
+// polls "is another app playing" and re-asserts the gain, so call it every
+// display tick.
+void apotris_audio_boot(void);
+void apotris_audio_set_mode(int mode); // ApotrisAudioMode
+void apotris_audio_set_volume(float volume); // master gain, 0..1
+void apotris_audio_reactivate(void);         // foregrounded: revive the session
+void apotris_audio_tick(void);
 
 // Haptics -------------------------------------------------------------------
 // The engine's rumble path calls back into the shell (strength 0..8-ish, 0=stop).

@@ -62,6 +62,8 @@ remappable bindings; controller rumble.
 - The full skin / palette / gradient customization, soundtrack, and detailed stats
 - **Gestures, GB buttons, controller, keyboard** — pick your input and remap freely
 - **Display filters:** Sharp (crisp pixels), LCD (handheld grid), CRT (scanlines)
+- **Plays nicely with your music:** choose whether a podcast or Music keeps playing, gets lowered,
+  or stops — or have Apotris lower / mute itself instead — plus a master game-volume slider
 - 60 / 120 Hz (ProMotion), native settings that persist
 - **Pick up where you left off:** a long run is saved when you leave the app, so a force-quit
   (or a reboot) doesn't lose it — **Continue** appears at the top of the menu on the next launch

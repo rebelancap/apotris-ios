@@ -143,7 +143,7 @@ static void suspendAppAudio() {
         gSoloud.mBackendPauseFunc(&gSoloud);
 }
 static void resumeAppAudio() {
-    [[AVAudioSession sharedInstance] setActive:YES error:nil];
+    apotris_audio_reactivate();
     if (gSoloud.mBackendResumeFunc)
         gSoloud.mBackendResumeFunc(&gSoloud);
 }
@@ -939,10 +939,9 @@ void apotris_start(const char* resourcePath, const char* documentsPath) {
 
     frameSemaphore = dispatch_semaphore_create(0);
 
-    NSError* err = nil;
-    [[AVAudioSession sharedInstance] setCategory:AVAudioSessionCategoryAmbient
-                                           error:&err];
-    [[AVAudioSession sharedInstance] setActive:YES error:nil];
+    // Before the game thread starts: SoLoud opens its AudioQueue in there, and
+    // the session's FIRST activation is the moment other apps get interrupted.
+    apotris_audio_boot();
 #if !TARGET_OS_VISION
     [UIDevice currentDevice].batteryMonitoringEnabled = YES;
 #endif

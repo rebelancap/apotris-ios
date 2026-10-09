@@ -18,10 +18,14 @@ Metal — no emulator, the game's own engine rebuilt for Apple platforms.
 
 **Add the SideStore source** — the easiest path, and Apotris auto-updates when new versions ship:
 
-| Device | Source URL |
-| --- | --- |
-| iPhone / iPad | `https://raw.githubusercontent.com/rebelancap/apotris-ios/main/sidestore/apps-ios.json` |
-| Apple Vision Pro | `https://raw.githubusercontent.com/rebelancap/apotris-ios/main/sidestore/apps-visionos.json` |
+| Device | Source | Source URL |
+| --- | --- | --- |
+| iPhone / iPad | Apotris only | `https://raw.githubusercontent.com/rebelancap/apotris-ios/main/sidestore/apps-ios.json` |
+| iPhone / iPad | All ports | `https://raw.githubusercontent.com/rebelancap/all-ports/main/apps-ios.json` |
+| Apple Vision Pro | Apotris only | `https://raw.githubusercontent.com/rebelancap/apotris-ios/main/sidestore/apps-visionos.json` |
+| Apple Vision Pro | All ports | `https://raw.githubusercontent.com/rebelancap/all-ports/main/apps-visionos.json` |
+
+Apotris is in both sources — add either one (All ports carries every rebelancap port).
 
 In [SideStore](https://sidestore.io) / [AltStore](https://altstore.io): *Sources → **+** → paste the URL*, then install Apotris.
 
